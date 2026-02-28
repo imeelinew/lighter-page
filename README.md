@@ -1,18 +1,27 @@
 # lighter-page
 
-一个基于 Docker + Nginx 的轻量起始页，适合部署到 VPS 自托管使用。
+A lightweight self-hosted start page built with Docker and Nginx.
 
-## 当前能力
+`lighter-page` is a clean homepage for daily use: one Google search box, grouped bookmarks, local editing, drag sorting, mobile support, and a calm visual style. It is designed to be simple to deploy on a VPS and easy to maintain.
 
-- Google 搜索
-- 分组书签
-- 书签增删改查
-- 书签拖拽排序
-- 自定义弹层
-- 手机端适配
-- Docker 部署
+## Features
 
-## 目录结构
+- Google search homepage
+- Grouped bookmarks
+- Create, edit, delete bookmarks and groups
+- Drag to reorder bookmarks
+- Responsive mobile layout
+- Docker-based deployment
+- Default bookmarks loaded from JSON
+- Per-browser persistence with `localStorage`
+
+## Stack
+
+- HTML / CSS / JavaScript
+- Nginx
+- Docker / Docker Compose
+
+## Project Structure
 
 ```text
 .
@@ -28,23 +37,31 @@
     `-- styles.css
 ```
 
-## 本地启动
+## Quick Start
+
+Run locally:
 
 ```bash
 docker compose up -d --build
 ```
 
-默认访问：
+Then open:
 
 ```text
 http://localhost:8080
 ```
 
-## VPS 自托管
+Stop the service:
 
-### 1. 安装 Docker
+```bash
+docker compose down
+```
 
-Ubuntu / Debian 常见安装方式：
+## VPS Deployment
+
+### 1. Install Docker
+
+Example for Ubuntu / Debian:
 
 ```bash
 curl -fsSL https://get.docker.com | sh
@@ -52,92 +69,69 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-安装完成后确认：
+Verify installation:
 
 ```bash
 docker --version
 docker compose version
 ```
 
-### 2. 上传项目到 VPS
-
-方式任选一种：
-
-- `git clone`
-- `scp` 上传
-- SFTP / 面板上传
-
-例如：
+### 2. Clone the repository
 
 ```bash
-git clone <your-repo-url> lighter-page
+git clone https://github.com/imeelinew/lighter-page.git
 cd lighter-page
 ```
 
-### 3. 修改默认书签
-
-编辑：
-
-[`public/data/bookmarks.json`](/c:/Development/lighter-page/public/data/bookmarks.json)
-
-注意：
-
-- 这是默认配置
-- 首次打开会导入到浏览器本地
-- 如果某个浏览器后续已经自己改过书签，那么它会优先使用本地数据
-- 想重新读取默认配置，可以点页面里的“恢复默认”
-
-### 4. 启动容器
+### 3. Start the container
 
 ```bash
 docker compose up -d --build
 ```
 
-查看状态：
+Check status:
 
 ```bash
 docker compose ps
 ```
 
-查看日志：
+View logs:
 
 ```bash
 docker compose logs -f
 ```
 
-### 5. 放行端口
+### 4. Expose the service
 
-当前 compose 映射的是：
+Current port mapping:
 
 ```text
 8080 -> 80
 ```
 
-如果 VPS 开了防火墙，需要放行 `8080`：
+If your VPS firewall is enabled:
 
 ```bash
 sudo ufw allow 8080/tcp
 ```
 
-然后直接访问：
+Then access:
 
 ```text
-http://你的VPS公网IP:8080
+http://YOUR_SERVER_IP:8080
 ```
 
-## 绑定域名和 HTTPS
+## Domain and HTTPS
 
-最推荐的方式是让这个容器继续监听 `8080`，前面再挂一个反向代理。
+The recommended setup is to keep this container on `127.0.0.1:8080` and place a reverse proxy in front of it.
 
-常见方案：
+Recommended options:
 
 - Caddy
 - Nginx Proxy Manager
-- 你自己的 Nginx / Caddy
+- Your own Nginx or Caddy config
 
-### Caddy 示例
-
-如果你的域名是 `start.example.com`，Caddy 可以直接反代并自动签发 HTTPS：
+### Example Caddyfile
 
 ```caddyfile
 start.example.com {
@@ -145,43 +139,69 @@ start.example.com {
 }
 ```
 
-这样外部访问就是：
+This gives you:
 
 ```text
 https://start.example.com
 ```
 
-## 更新项目
+## Bookmarks Data
 
-如果你修改了页面代码，VPS 上执行：
+Default bookmarks live in:
+
+`public/data/bookmarks.json`
+
+Important behavior:
+
+- The JSON file is the default source
+- On first load, bookmarks are initialized in the browser
+- After a user edits bookmarks, that browser uses its own local state
+- To reload the default JSON, use the in-page reset action
+
+Example structure:
+
+```json
+{
+  "groups": [
+    {
+      "title": "Daily",
+      "items": [
+        {
+          "name": "Google",
+          "url": "https://www.google.com"
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Updating
+
+After changing code:
 
 ```bash
 docker compose up -d --build
 ```
 
-如果只是改默认书签：
+After changing only the default bookmarks file:
 
 ```bash
 docker compose restart
 ```
 
-## 停止项目
+## Notes
 
-```bash
-docker compose down
-```
+- `docker-compose.yml` uses `restart: unless-stopped`
+- `bookmarks.json` is mounted read-only into the container
+- User-edited bookmarks are stored in browser `localStorage`
+- This is currently a single-user browser-local persistence model, not multi-device sync
 
-## 说明
+## Next Steps
 
-- `docker-compose.yml` 已加 `restart: unless-stopped`
-- `bookmarks.json` 使用只读挂载，容器内不会改坏你的默认配置
-- 用户在浏览器里新增、编辑、排序书签后，数据保存在该浏览器自己的 `localStorage`
-- 这意味着它不是“服务端统一账号同步”，而是“每个浏览器各自保存”
+If you want to evolve this into a more complete self-hosted homepage, the most useful next steps are:
 
-## 更适合长期使用的下一步
-
-如果你后面要把它变成更完整的自托管首页，最值得继续做的是：
-
-1. 增加服务端持久化，而不是只靠浏览器 `localStorage`
-2. 增加登录或单用户鉴权
-3. 增加一份专门给 VPS 用的反向代理配置
+1. Add server-side persistence
+2. Add authentication
+3. Add a production reverse proxy config
+4. Add CI/CD or auto-deploy
