@@ -1,0 +1,9 @@
+services:
+  homepage:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public/data/bookmarks.json:/usr/share/nginx/html/data/bookmarks.json:ro

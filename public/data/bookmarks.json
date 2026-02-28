@@ -1,0 +1,72 @@
+{
+  "groups": [
+    {
+      "title": "日常",
+      "items": [
+        {
+          "name": "Google",
+          "url": "https://www.google.com"
+        },
+        {
+          "name": "Gmail",
+          "url": "https://mail.google.com"
+        },
+        {
+          "name": "YouTube",
+          "url": "https://www.youtube.com"
+        }
+      ]
+    },
+    {
+      "title": "开发",
+      "items": [
+        {
+          "name": "GitHub",
+          "url": "https://github.com"
+        },
+        {
+          "name": "Stack Overflow",
+          "url": "https://stackoverflow.com"
+        },
+        {
+          "name": "MDN Web Docs",
+          "url": "https://developer.mozilla.org"
+        }
+      ]
+    },
+    {
+      "title": "学习",
+      "items": [
+        {
+          "name": "Coursera",
+          "url": "https://www.coursera.org"
+        },
+        {
+          "name": "Wikipedia",
+          "url": "https://www.wikipedia.org"
+        },
+        {
+          "name": "Google Scholar",
+          "url": "https://scholar.google.com"
+        }
+      ]
+    },
+    {
+      "title": "工具",
+      "items": [
+        {
+          "name": "Notion",
+          "url": "https://www.notion.so"
+        },
+        {
+          "name": "Figma",
+          "url": "https://www.figma.com"
+        },
+        {
+          "name": "Excalidraw",
+          "url": "https://excalidraw.com"
+        }
+      ]
+    }
+  ]
+}
