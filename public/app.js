@@ -7,26 +7,26 @@ const FAVICON_CACHE_KEY = "lighter-page-favicon-cache";
 const EXPORT_FILE_NAME = "lighter-page-bookmarks.json";
 const GOOGLE_FAVICON_URL = "https://www.google.com/s2/favicons?sz=64&domain_url=";
 const GREETINGS = [
-  "Let the morning open like silk",
-  "Begin where the light rests",
-  "May this hour move gently",
-  "Follow the hush of bright things",
-  "Let calm find its shape today",
-  "Take the first step softly",
-  "Where light falls work may bloom",
-  "Let the day unfold in gold",
-  "Start with the quietest courage",
-  "Keep close to what matters",
-  "May the small hours shine kindly",
-  "Begin beneath a tender sky",
-  "Let wonder guide your hands",
-  "Move slowly and make beauty",
-  "May clarity arrive like dawn",
-  "Hold steady and enter the day",
-  "Let your thoughts gather like birds",
-  "Start where your heart is clear",
-  "May good work find you easily",
-  "Let this page open into light"
+  "早上好，今天也要写出优雅代码 ✨",
+  "开工啦，愿你的每次提交都一把过 🚀",
+  "欢迎回来，今天继续把想法变成产品",
+  "新的一天，先把最难的技术点拿下",
+  "代码已就位，灵感请直接 push",
+  "愿你今天调试顺利、日志清爽、心态稳定",
+  "开始吧，把复杂问题拆成漂亮方案",
+  "今天也做一个对用户真正有用的功能",
+  "欢迎进入专注模式，性能和体验都拉满",
+  "愿你今天少踩坑，多产出，PR 一次通过",
+  "早安，去实现那个你一直想做的点子",
+  "今天也要保持工程师的好奇心与锋芒",
+  "把灵感写进代码，把代码送到线上",
+  "新一天，新分支，新突破",
+  "让我们把每一行代码都写得值得",
+  "保持热爱，持续迭代，稳步发布",
+  "今天也要把技术债还掉一点点",
+  "准备好了就开干，世界需要你的作品",
+  "愿你今天的架构清晰、接口干净、体验丝滑",
+  "你好开发者，今天也一起做点酷东西 😎"
 ];
 
 const SVG_ICONS = {

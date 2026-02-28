@@ -9,7 +9,7 @@
       name="description"
       content="A lightweight homepage with Google search, grouped bookmarks, and a calm blue layout."
     />
-    <link rel="stylesheet" href="./styles.css?v=20260228-5" />
+    <link rel="stylesheet" href="./styles.css?v=20260228-9" />
   </head>
   <body>
     <div class="page-shell" id="app-shell">
@@ -35,7 +35,6 @@
           <div class="section-heading">
             <div class="section-title-block">
               <h2 id="bookmarks-title">书签</h2>
-              <p id="bookmark-source-status" class="bookmark-source-status" aria-live="polite"></p>
             </div>
             <div class="section-tools" aria-label="书签操作">
               <input id="import-file-input" type="file" accept="application/json,.json" hidden />
@@ -48,7 +47,6 @@
           </div>
 
           <div class="section-subbar">
-            <p id="bookmark-status" class="bookmark-status" aria-live="polite"></p>
             <label class="filter-field" for="bookmark-filter">
               <span class="sr-only">筛选书签</span>
               <input id="bookmark-filter" type="search" placeholder="筛选书签" autocomplete="off" />
@@ -164,6 +162,6 @@
       <div class="noscript-banner">需要启用 JavaScript 才能加载书签分组</div>
     </noscript>
 
-    <script src="./app.js?v=20260228-5" defer></script>
+    <script src="./app.js?v=20260228-7" defer></script>
   </body>
 </html>
