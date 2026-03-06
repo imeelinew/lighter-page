@@ -1,7 +1,7 @@
 {
   "groups": [
     {
-      "title": "日常",
+      "title": "Daily",
       "items": [
         {
           "name": "Google",
@@ -18,7 +18,7 @@
       ]
     },
     {
-      "title": "开发",
+      "title": "Build",
       "items": [
         {
           "name": "GitHub",
@@ -35,7 +35,7 @@
       ]
     },
     {
-      "title": "学习",
+      "title": "Learn",
       "items": [
         {
           "name": "Coursera",
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "title": "工具",
+      "title": "Tools",
       "items": [
         {
           "name": "Notion",

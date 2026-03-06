@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,7 +9,7 @@
       name="description"
       content="A lightweight homepage with Google search, grouped bookmarks, and a calm blue layout."
     />
-    <link rel="stylesheet" href="./styles.css?v=20260228-9" />
+    <link rel="stylesheet" href="./styles.css?v=20260306-3" />
   </head>
   <body>
     <div class="page-shell" id="app-shell">
@@ -18,38 +18,40 @@
           <h1 id="page-title">Lighter Page</h1>
 
           <form class="search-form" id="search-form" novalidate>
-            <label class="sr-only" for="search-input">Google 搜索</label>
+            <label class="sr-only" for="search-input">Google Search</label>
             <input
               id="search-input"
               name="q"
               type="search"
-              placeholder="使用 Google 搜索"
+              placeholder="Use Google Search"
               autocomplete="off"
               enterkeyhint="search"
             />
-            <button type="submit">搜索</button>
+            <button type="submit">Search</button>
           </form>
         </section>
 
         <section class="bookmarks-section" aria-labelledby="bookmarks-title">
           <div class="section-heading">
             <div class="section-title-block">
-              <h2 id="bookmarks-title">书签</h2>
+              <h2 id="bookmarks-title">Bookmarks</h2>
+              <p id="bookmark-source-status" class="bookmark-source-status" aria-live="polite"></p>
             </div>
-            <div class="section-tools" aria-label="书签操作">
+            <div class="section-tools" aria-label="Bookmark Tools">
               <input id="import-file-input" type="file" accept="application/json,.json" hidden />
-              <button type="button" class="toolbar-button" id="import-button" aria-label="导入书签" title="导入书签"></button>
-              <button type="button" class="toolbar-button" id="export-button" aria-label="导出书签" title="导出书签"></button>
-              <button type="button" class="toolbar-button" id="reset-button" aria-label="恢复默认" title="恢复默认"></button>
-              <button type="button" class="toolbar-button" id="settings-button" aria-label="页面设置" title="页面设置"></button>
-              <button type="button" class="toolbar-button is-primary" id="add-group-button" aria-label="新建分组" title="新建分组"></button>
+              <button type="button" class="toolbar-button" id="import-button" aria-label="Import Bookmarks" title="Import Bookmarks"></button>
+              <button type="button" class="toolbar-button" id="export-button" aria-label="Export Bookmarks" title="Export Bookmarks"></button>
+              <button type="button" class="toolbar-button" id="reset-button" aria-label="Restore Defaults" title="Restore Defaults"></button>
+              <button type="button" class="toolbar-button" id="settings-button" aria-label="Page Settings" title="Page Settings"></button>
+              <button type="button" class="toolbar-button is-primary" id="add-group-button" aria-label="New Group" title="New Group"></button>
             </div>
           </div>
 
           <div class="section-subbar">
+            <p id="bookmark-status" class="bookmark-status" aria-live="polite"></p>
             <label class="filter-field" for="bookmark-filter">
-              <span class="sr-only">筛选书签</span>
-              <input id="bookmark-filter" type="search" placeholder="筛选书签" autocomplete="off" />
+              <span class="sr-only">Filter Bookmarks</span>
+              <input id="bookmark-filter" type="search" placeholder="Filter Bookmarks" autocomplete="off" />
             </label>
           </div>
 
@@ -73,15 +75,15 @@
         aria-labelledby="editor-title"
       >
         <div class="editor-header">
-          <h3 id="editor-title">编辑</h3>
-          <button type="button" class="icon-button" id="close-editor-button" aria-label="关闭"></button>
+          <h3 id="editor-title">Edit</h3>
+          <button type="button" class="icon-button" id="close-editor-button" aria-label="Close"></button>
         </div>
         <form id="editor-form" class="editor-form" novalidate>
           <div id="editor-fields" class="editor-fields"></div>
           <p id="editor-error" class="editor-error" role="alert"></p>
           <div class="editor-actions">
-            <button type="button" class="ghost-button" id="cancel-editor-button">取消</button>
-            <button type="submit" class="primary-button" id="save-editor-button">保存</button>
+            <button type="button" class="ghost-button" id="cancel-editor-button">Cancel</button>
+            <button type="submit" class="primary-button" id="save-editor-button">Save</button>
           </div>
         </form>
       </section>
@@ -96,43 +98,43 @@
         aria-labelledby="settings-title"
       >
         <div class="editor-header">
-          <h3 id="settings-title">页面设置</h3>
-          <button type="button" class="icon-button" id="close-settings-button" aria-label="关闭"></button>
+          <h3 id="settings-title">Page Settings</h3>
+          <button type="button" class="icon-button" id="close-settings-button" aria-label="Close"></button>
         </div>
         <form id="settings-form" class="editor-form" novalidate>
           <div class="settings-grid">
             <label class="toggle-field">
               <input id="setting-show-favicons" name="showFavicons" type="checkbox" />
               <span>
-                <strong>显示 favicon</strong>
-                <small>为书签显示网站图标</small>
+                <strong>Show Favicons</strong>
+                <small>Display site icons for bookmarks</small>
               </span>
             </label>
             <label class="toggle-field">
               <input id="setting-performance-mode" name="performanceMode" type="checkbox" />
               <span>
-                <strong>性能优先</strong>
-                <small>减少重动画和高开销视觉效果</small>
+                <strong>Performance Mode</strong>
+                <small>Reduce expensive motion and visual effects</small>
               </span>
             </label>
             <label class="toggle-field">
               <input id="setting-show-animations" name="showAnimations" type="checkbox" />
               <span>
-                <strong>显示动画</strong>
-                <small>启用首屏和卡片过渡动画</small>
+                <strong>Enable Animations</strong>
+                <small>Turn on entrance and transition animations</small>
               </span>
             </label>
             <label class="toggle-field">
               <input id="setting-hide-scrollbars" name="hideScrollbars" type="checkbox" />
               <span>
-                <strong>隐藏滚动条</strong>
-                <small>保留滚动能力但不显示滚动条</small>
+                <strong>Hide Scrollbars</strong>
+                <small>Keep scrolling available while hiding scrollbars</small>
               </span>
             </label>
           </div>
           <div class="editor-actions">
-            <button type="button" class="ghost-button" id="cancel-settings-button">取消</button>
-            <button type="submit" class="primary-button" id="save-settings-button">保存设置</button>
+            <button type="button" class="ghost-button" id="cancel-settings-button">Cancel</button>
+            <button type="submit" class="primary-button" id="save-settings-button">Save Settings</button>
           </div>
         </form>
       </section>
@@ -148,20 +150,20 @@
         aria-describedby="confirm-message"
       >
         <div class="editor-header">
-          <h3 id="confirm-title">请确认</h3>
+          <h3 id="confirm-title">Please Confirm</h3>
         </div>
         <p id="confirm-message" class="confirm-message"></p>
         <div class="editor-actions">
-          <button type="button" class="ghost-button" id="confirm-cancel-button">取消</button>
-          <button type="button" class="primary-button" id="confirm-accept-button">确认</button>
+          <button type="button" class="ghost-button" id="confirm-cancel-button">Cancel</button>
+          <button type="button" class="primary-button" id="confirm-accept-button">Confirm</button>
         </div>
       </section>
     </div>
 
     <noscript>
-      <div class="noscript-banner">需要启用 JavaScript 才能加载书签分组</div>
+      <div class="noscript-banner">JavaScript is required to load bookmark groups.</div>
     </noscript>
 
-    <script src="./app.js?v=20260228-7" defer></script>
+    <script src="./app.js?v=20260306-3" defer></script>
   </body>
 </html>

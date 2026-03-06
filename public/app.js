@@ -1,32 +1,31 @@
 const SEARCH_URL = "https://www.google.com/search?q=";
-const BOOKMARKS_URL = "./data/bookmarks.json";
-const STORAGE_KEY = "lighter-page-bookmarks";
-const DEFAULT_SIGNATURE_KEY = "lighter-page-default-signature";
+const BOOKMARKS_API_URL = "./api/bookmarks";
+const BOOKMARKS_RESET_URL = "./api/bookmarks/reset";
 const SETTINGS_KEY = "lighter-page-settings";
 const FAVICON_CACHE_KEY = "lighter-page-favicon-cache";
 const EXPORT_FILE_NAME = "lighter-page-bookmarks.json";
 const GOOGLE_FAVICON_URL = "https://www.google.com/s2/favicons?sz=64&domain_url=";
 const GREETINGS = [
-  "早上好，今天也要写出优雅代码 ✨",
-  "开工啦，愿你的每次提交都一把过 🚀",
-  "欢迎回来，今天继续把想法变成产品",
-  "新的一天，先把最难的技术点拿下",
-  "代码已就位，灵感请直接 push",
-  "愿你今天调试顺利、日志清爽、心态稳定",
-  "开始吧，把复杂问题拆成漂亮方案",
-  "今天也做一个对用户真正有用的功能",
-  "欢迎进入专注模式，性能和体验都拉满",
-  "愿你今天少踩坑，多产出，PR 一次通过",
-  "早安，去实现那个你一直想做的点子",
-  "今天也要保持工程师的好奇心与锋芒",
-  "把灵感写进代码，把代码送到线上",
-  "新一天，新分支，新突破",
-  "让我们把每一行代码都写得值得",
-  "保持热爱，持续迭代，稳步发布",
-  "今天也要把技术债还掉一点点",
-  "准备好了就开干，世界需要你的作品",
-  "愿你今天的架构清晰、接口干净、体验丝滑",
-  "你好开发者，今天也一起做点酷东西 😎"
+  "Good morning, begin gently and go far.",
+  "Let the day unfold in quiet grace.",
+  "A little light is enough to begin.",
+  "Soft hours, clear thoughts, steady work.",
+  "The morning opens like a page of silk.",
+  "Begin where the light touches first.",
+  "Let calm be the rhythm of the day.",
+  "A quiet start can hold a bright world.",
+  "Some mornings arrive like music.",
+  "May this hour feel tender and clear.",
+  "The day waits softly at your hands.",
+  "Step lightly, think deeply, move well.",
+  "The gentlest beginnings endure the longest.",
+  "Light gathers in the smallest moments.",
+  "Start slow enough to notice what matters.",
+  "There is grace in an unhurried opening.",
+  "Let the morning keep its golden hush.",
+  "A small beginning can still be beautiful.",
+  "Open the day like a window to warmth.",
+  "Even a quiet dawn can carry wonder."
 ];
 
 const SVG_ICONS = {
@@ -111,12 +110,13 @@ let confirmState = null;
 let lastActiveElement = null;
 let activeModalBackdrop = null;
 let dragState = null;
-let dataSourceKind = "default";
+let dataSourceKind = "server";
 let bookmarkFilterValue = "";
 let settingsState = loadSettings();
 let faviconCache = loadFaviconCache();
 let faviconCacheDirty = false;
 let faviconCacheSaveTimer = 0;
+let bookmarkSaveRequestId = 0;
 
 function defaultSettings() {
   return {
@@ -303,7 +303,7 @@ function normalizeGroup(group) {
     return null;
   }
 
-  const title = typeof group.title === "string" && group.title.trim() ? group.title.trim() : "未命名分组";
+  const title = typeof group.title === "string" && group.title.trim() ? group.title.trim() : "Unnamed Group";
   const items = Array.isArray(group.items) ? group.items.map(normalizeBookmark).filter(Boolean) : [];
 
   return { title, items };
@@ -323,49 +323,66 @@ function serializeData(data) {
   return JSON.stringify(sanitizeData(cloneData(data)));
 }
 
-function persistBookmarks() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarkState));
-}
-
-function persistDefaultSignature(signature) {
-  localStorage.setItem(DEFAULT_SIGNATURE_KEY, signature);
-}
-
-function readDefaultSignature() {
-  return localStorage.getItem(DEFAULT_SIGNATURE_KEY) || "";
-}
-
-function markBookmarksCustomized() {
-  persistDefaultSignature("");
-}
-
-function clearStoredBookmarks() {
-  localStorage.removeItem(STORAGE_KEY);
-}
-
-function readStoredBookmarks() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-
-    if (!raw) {
-      return null;
-    }
-
-    return sanitizeData(JSON.parse(raw));
-  } catch (error) {
-    console.error("Failed to parse stored bookmarks:", error);
-    return null;
-  }
-}
-
-async function fetchDefaultBookmarks() {
-  const response = await fetch(BOOKMARKS_URL, { cache: "no-store" });
-
+async function parseBookmarksResponse(response) {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
 
-  return sanitizeData(await response.json());
+  const payload = await response.json();
+  return {
+    data: sanitizeData(payload),
+    source: payload?.meta?.source === "default" ? "default" : "server"
+  };
+}
+
+async function fetchBookmarks() {
+  const response = await fetch(BOOKMARKS_API_URL, { cache: "no-store" });
+  return parseBookmarksResponse(response);
+}
+
+async function writeBookmarks(data = bookmarkState) {
+  const response = await fetch(BOOKMARKS_API_URL, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: serializeData(data)
+  });
+
+  return parseBookmarksResponse(response);
+}
+
+async function resetBookmarks() {
+  const response = await fetch(BOOKMARKS_RESET_URL, {
+    method: "POST"
+  });
+
+  return parseBookmarksResponse(response);
+}
+
+function persistBookmarks() {
+  const snapshot = cloneData(bookmarkState);
+  const requestId = ++bookmarkSaveRequestId;
+
+  void writeBookmarks(snapshot)
+    .then(({ data, source }) => {
+      if (requestId !== bookmarkSaveRequestId) {
+        return;
+      }
+
+      bookmarkState = cloneData(data);
+      dataSourceKind = source;
+      setFeedback("");
+      renderBookmarks();
+    })
+    .catch((error) => {
+      if (requestId !== bookmarkSaveRequestId) {
+        return;
+      }
+
+      console.error("Failed to sync bookmarks:", error);
+      setFeedback("Failed to sync bookmarks to the server.", true);
+    });
 }
 
 function loadFaviconCache() {
@@ -420,7 +437,7 @@ function setSourceStatus() {
     return;
   }
 
-  node.textContent = `当前数据：${dataSourceKind === "default" ? "默认配置" : "本地书签"}`;
+  node.textContent = `Current Data: ${dataSourceKind === "default" ? "Bundled Defaults" : "Server Storage"}`;
 }
 
 function setBookmarkStatus(text) {
@@ -723,11 +740,11 @@ function updateStatusSummary(visibleGroups) {
   const visibleTotals = getBookmarkTotals(visibleGroups);
 
   if (bookmarkFilterValue) {
-    setBookmarkStatus(`筛选结果：${visibleTotals.groups} 个分组 · ${visibleTotals.items} 个书签`);
+    setBookmarkStatus(`Filtered: ${visibleTotals.groups} groups - ${visibleTotals.items} bookmarks`);
     return;
   }
 
-  setBookmarkStatus(`共 ${totals.groups} 个分组 · ${totals.items} 个书签`);
+  setBookmarkStatus(`${totals.groups} groups - ${totals.items} bookmarks`);
 }
 
 function getDropTargetFromPoint(clientX, clientY) {
@@ -922,16 +939,16 @@ function createBookmarkElement(item, groupIndex, itemIndex) {
 
   actions.className = "bookmark-actions";
   actions.appendChild(
-    createIconButton("编辑书签", "edit", "icon-action-button", () => openBookmarkEditor(groupIndex, itemIndex))
+    createIconButton("Edit Bookmark", "edit", "icon-action-button", () => openBookmarkEditor(groupIndex, itemIndex))
   );
   actions.appendChild(
-    createIconButton("删除书签", "trash", "icon-action-button danger", () => deleteBookmark(groupIndex, itemIndex))
+    createIconButton("Delete Bookmark", "trash", "icon-action-button danger", () => deleteBookmark(groupIndex, itemIndex))
   );
 
   dragHandle.type = "button";
   dragHandle.className = "bookmark-drag-handle";
-  dragHandle.setAttribute("aria-label", "拖动排序");
-  dragHandle.title = "拖动排序";
+  dragHandle.setAttribute("aria-label", "Drag to Reorder");
+  dragHandle.title = "Drag to Reorder";
   setButtonIcon(dragHandle, "grip");
   dragHandle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 && event.pointerType !== "touch") {
@@ -970,19 +987,19 @@ function createGroupElement(group, groupIndex) {
   header.appendChild(title);
 
   actions.appendChild(
-    createIconButton("新增书签", "add", "icon-action-button", () => openBookmarkEditor(groupIndex))
+    createIconButton("Add Bookmark", "add", "icon-action-button", () => openBookmarkEditor(groupIndex))
   );
   actions.appendChild(
-    createIconButton("编辑分组", "edit", "icon-action-button", () => openGroupEditor(groupIndex))
+    createIconButton("Edit Group", "edit", "icon-action-button", () => openGroupEditor(groupIndex))
   );
   actions.appendChild(
-    createIconButton("删除分组", "trash", "icon-action-button danger", () => deleteGroup(groupIndex))
+    createIconButton("Delete Group", "trash", "icon-action-button danger", () => deleteGroup(groupIndex))
   );
 
   if (group.items.length === 0) {
     const emptyState = document.createElement("div");
     emptyState.className = "bookmark-empty";
-    emptyState.textContent = "这个分组里还没有书签";
+    emptyState.textContent = "This group has no bookmarks yet";
     list.appendChild(emptyState);
   } else {
     group.items.forEach((item, itemIndex) => {
@@ -1015,9 +1032,9 @@ function renderBookmarks() {
   setSourceStatus();
 
   if (bookmarkState.groups.length === 0) {
-    setBookmarkStatus("当前没有书签分组");
+    setBookmarkStatus("No bookmark groups yet");
     setFeedback("");
-    renderEmptyState(container, "当前还没有书签分组，先新建一个吧");
+    renderEmptyState(container, "There are no bookmark groups yet. Create one to get started.");
     return;
   }
 
@@ -1026,7 +1043,7 @@ function renderBookmarks() {
 
   if (visibleGroups.length === 0) {
     setFeedback("");
-    renderEmptyState(container, "没有匹配的书签");
+    renderEmptyState(container, "No matching bookmarks");
     return;
   }
 
@@ -1116,15 +1133,15 @@ function openGroupEditor(groupIndex) {
 
   openEditor({
     mode: "group",
-    title: group ? "编辑分组" : "新建分组",
+    title: group ? "Edit Group" : "New Group",
     groupIndex,
     fields: [
       {
         id: "group-title",
         name: "title",
-        label: "分组名称",
+        label: "Group Name",
         value: group ? group.title : "",
-        placeholder: "例如 日常"
+        placeholder: "e.g. Daily"
       }
     ]
   });
@@ -1136,21 +1153,21 @@ function openBookmarkEditor(groupIndex, itemIndex) {
 
   openEditor({
     mode: "bookmark",
-    title: item ? "编辑书签" : "新增书签",
+    title: item ? "Edit Bookmark" : "Add Bookmark",
     groupIndex,
     itemIndex,
     fields: [
       {
         id: "bookmark-name",
         name: "name",
-        label: "名称",
+        label: "Name",
         value: item ? item.name : "",
-        placeholder: "例如 GitHub"
+        placeholder: "e.g. GitHub"
       },
       {
         id: "bookmark-url",
         name: "url",
-        label: "链接",
+        label: "URL",
         type: "url",
         value: item ? item.url : "",
         placeholder: "https://example.com"
@@ -1163,7 +1180,7 @@ function saveGroup(formData) {
   const title = (formData.get("title") || "").toString().trim();
 
   if (!title) {
-    setEditorError("分组名称不能为空");
+    setEditorError("Group name is required");
     return;
   }
 
@@ -1173,8 +1190,7 @@ function saveGroup(formData) {
     bookmarkState.groups.push({ title, items: [] });
   }
 
-  dataSourceKind = "local";
-  markBookmarksCustomized();
+  dataSourceKind = "server";
   persistBookmarks();
   renderBookmarks();
   closeEditor();
@@ -1186,17 +1202,17 @@ function saveBookmark(formData) {
   const groupIndex = editorState.groupIndex;
 
   if (!bookmarkState.groups[groupIndex]) {
-    setEditorError("当前分组不可用");
+    setEditorError("Selected group is unavailable");
     return;
   }
 
   if (!name) {
-    setEditorError("书签名称不能为空");
+    setEditorError("Bookmark name is required");
     return;
   }
 
   if (!url) {
-    setEditorError("链接不能为空");
+    setEditorError("URL is required");
     return;
   }
 
@@ -1208,8 +1224,7 @@ function saveBookmark(formData) {
     bookmarkState.groups[groupIndex].items.push(record);
   }
 
-  dataSourceKind = "local";
-  markBookmarksCustomized();
+  dataSourceKind = "server";
   persistBookmarks();
   renderBookmarks();
   closeEditor();
@@ -1245,8 +1260,7 @@ function moveBookmarkByDrag(sourceGroupIndex, sourceItemIndex, targetGroupIndex,
   insertionIndex = Math.max(0, Math.min(insertionIndex, targetItems.length));
   targetItems.splice(insertionIndex, 0, item);
 
-  dataSourceKind = "local";
-  markBookmarksCustomized();
+  dataSourceKind = "server";
   persistBookmarks();
   renderBookmarks();
 }
@@ -1293,10 +1307,9 @@ function deleteGroup(groupIndex) {
     return;
   }
 
-  openConfirmDialog(`确定删除分组「${group.title}」吗`, () => {
+  openConfirmDialog(`Are you sure you want to delete group "${group.title}"?`, () => {
     bookmarkState.groups.splice(groupIndex, 1);
-    dataSourceKind = "local";
-    markBookmarksCustomized();
+    dataSourceKind = "server";
     persistBookmarks();
     renderBookmarks();
   });
@@ -1310,10 +1323,9 @@ function deleteBookmark(groupIndex, itemIndex) {
     return;
   }
 
-  openConfirmDialog(`确定删除书签「${item.name}」吗`, () => {
+  openConfirmDialog(`Are you sure you want to delete bookmark "${item.name}"?`, () => {
     items.splice(itemIndex, 1);
-    dataSourceKind = "local";
-    markBookmarksCustomized();
+    dataSourceKind = "server";
     persistBookmarks();
     renderBookmarks();
   });
@@ -1332,19 +1344,14 @@ function exportBookmarks() {
 
 async function restoreDefaults() {
   try {
-    const defaults = await fetchDefaultBookmarks();
-    const defaultSignature = serializeData(defaults);
-
-    bookmarkState = cloneData(defaults);
-    dataSourceKind = "default";
-    clearStoredBookmarks();
-    persistBookmarks();
-    persistDefaultSignature(defaultSignature);
+    const { data, source } = await resetBookmarks();
+    bookmarkState = cloneData(data);
+    dataSourceKind = source;
     renderBookmarks();
     setFeedback("");
   } catch (error) {
     console.error("Failed to restore defaults:", error);
-    setFeedback("恢复默认失败，请检查默认配置文件。", true);
+    setFeedback("Failed to restore defaults from the server.", true);
   }
 }
 
@@ -1360,14 +1367,13 @@ function importBookmarksFromFile(file) {
       const nextState = sanitizeData(JSON.parse(String(reader.result || "")));
 
       bookmarkState = cloneData(nextState);
-      dataSourceKind = "local";
-      markBookmarksCustomized();
+      dataSourceKind = "server";
       persistBookmarks();
       renderBookmarks();
       setFeedback("");
     } catch (error) {
       console.error("Failed to import bookmarks:", error);
-      setFeedback("导入失败，请选择格式正确的 JSON 文件。", true);
+      setFeedback("Failed to import bookmarks. Select a valid JSON file.", true);
     }
   });
 
@@ -1444,7 +1450,7 @@ function initializeToolbar() {
   if (resetButton) {
     setButtonIcon(resetButton, "reset");
     resetButton.addEventListener("click", () => {
-      openConfirmDialog("恢复默认会重新读取 data/bookmarks.json 并覆盖当前本地书签，确定继续吗", restoreDefaults);
+      openConfirmDialog("Restoring defaults will reload data/bookmarks.json and replace the current server bookmarks. Continue?", restoreDefaults);
     });
   }
 
@@ -1542,51 +1548,17 @@ function initializeModalBehavior() {
 }
 
 async function loadBookmarks() {
-  const stored = readStoredBookmarks();
-  const previousDefaultSignature = readDefaultSignature();
-
   try {
-    const defaults = await fetchDefaultBookmarks();
-    const defaultSignature = serializeData(defaults);
-
-    if (!stored) {
-      bookmarkState = cloneData(defaults);
-      dataSourceKind = "default";
-      persistBookmarks();
-      persistDefaultSignature(defaultSignature);
-      renderBookmarks();
-      return;
-    }
-
-    const storedSignature = serializeData(stored);
-
-    if (previousDefaultSignature && storedSignature === previousDefaultSignature && storedSignature !== defaultSignature) {
-      bookmarkState = cloneData(defaults);
-      dataSourceKind = "default";
-      persistBookmarks();
-      persistDefaultSignature(defaultSignature);
-      renderBookmarks();
-      return;
-    }
-
-    bookmarkState = cloneData(stored);
-    dataSourceKind = "local";
-    persistDefaultSignature(defaultSignature);
+    const { data, source } = await fetchBookmarks();
+    bookmarkState = cloneData(data);
+    dataSourceKind = source;
     renderBookmarks();
+    setFeedback("");
   } catch (error) {
-    if (stored) {
-      bookmarkState = cloneData(stored);
-      dataSourceKind = "local";
-      renderBookmarks();
-      setFeedback("当前使用的是本地书签，默认配置文件读取失败。", true);
-      console.error("Failed to refresh defaults:", error);
-      return;
-    }
-
     bookmarkState = { groups: [] };
-    dataSourceKind = "default";
+    dataSourceKind = "server";
     renderBookmarks();
-    setFeedback("默认书签加载失败，请检查 data/bookmarks.json 是否存在且格式正确。", true);
+    setFeedback("Failed to load bookmarks from the server.", true);
     console.error("Failed to load bookmarks:", error);
   }
 }

@@ -1,0 +1,9 @@
+{
+  "name": "lighter-page",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-hosted start page with server-side bookmark sync",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

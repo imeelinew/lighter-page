@@ -1,8 +1,8 @@
 # lighter-page
 
-A lightweight self-hosted start page built with Docker and Nginx.
+A self-hosted start page with Google search, grouped bookmarks, and real server-side bookmark sync.
 
-`lighter-page` is a clean homepage for daily use: one Google search box, grouped bookmarks, local editing, drag sorting, mobile support, and a calm visual style. It is designed to be simple to deploy on a VPS and easy to maintain.
+`lighter-page` is built for a VPS workflow: one shared bookmark set stored on the server, editable from any device, with a lightweight single-container deployment.
 
 ## Features
 
@@ -11,14 +11,15 @@ A lightweight self-hosted start page built with Docker and Nginx.
 - Create, edit, delete bookmarks and groups
 - Drag to reorder bookmarks
 - Responsive mobile layout
+- Server-side bookmark persistence
+- Cross-device sync through a shared VPS data file
 - Docker-based deployment
-- Default bookmarks loaded from JSON
-- Per-browser persistence with `localStorage`
+- Default bookmark seed file
 
 ## Stack
 
 - HTML / CSS / JavaScript
-- Nginx
+- Node.js built-in HTTP server
 - Docker / Docker Compose
 
 ## Project Structure
@@ -27,15 +28,35 @@ A lightweight self-hosted start page built with Docker and Nginx.
 .
 |-- Dockerfile
 |-- docker-compose.yml
-|-- nginx.conf
-`-- public
-    |-- app.js
-    |-- assets
-    |-- data
-    |   `-- bookmarks.json
-    |-- index.html
-    `-- styles.css
+|-- data
+|   `-- bookmarks.runtime.json
+|-- package.json
+|-- public
+|   |-- app.js
+|   |-- assets
+|   |-- data
+|   |   `-- bookmarks.json
+|   |-- index.html
+|   `-- styles.css
+|-- README.md
+`-- server.js
 ```
+
+## How Data Works
+
+There are now two bookmark files:
+
+- `public/data/bookmarks.json`
+  This is the bundled default seed file.
+- `data/bookmarks.runtime.json`
+  This is the live server-side file created after the first edit or import.
+
+Runtime behavior:
+
+- If `data/bookmarks.runtime.json` does not exist, the app serves `public/data/bookmarks.json`
+- Once you edit bookmarks in the UI, the app writes to `data/bookmarks.runtime.json`
+- All devices connected to the same deployed instance read and write the same server file
+- Browser `localStorage` is only used for local UI settings and favicon cache, not bookmark storage
 
 ## Quick Start
 
@@ -83,7 +104,7 @@ git clone https://github.com/imeelinew/lighter-page.git
 cd lighter-page
 ```
 
-### 3. Start the container
+### 3. Start the service
 
 ```bash
 docker compose up -d --build
@@ -106,7 +127,7 @@ docker compose logs -f
 Current port mapping:
 
 ```text
-8080 -> 80
+8080 -> 8080
 ```
 
 If your VPS firewall is enabled:
@@ -121,9 +142,52 @@ Then access:
 http://YOUR_SERVER_IP:8080
 ```
 
-## Domain and HTTPS
+## Persistence
 
-The recommended setup is to keep this container on `127.0.0.1:8080` and place a reverse proxy in front of it.
+The live bookmark file is stored on the host through the compose volume:
+
+```text
+./data:/app/data
+```
+
+That means:
+
+- Rebuilding the container does not erase your live bookmarks
+- Backing up `data/bookmarks.runtime.json` backs up your shared bookmarks
+- Copying that file to another server migrates your current bookmark set
+
+## Restore Defaults
+
+The in-page restore action now resets the live server file and falls back to:
+
+```text
+public/data/bookmarks.json
+```
+
+If you want a different default set, edit that file and redeploy.
+
+## Updating
+
+After changing code:
+
+```bash
+docker compose up -d --build
+```
+
+After changing only the default seed file:
+
+```bash
+docker compose up -d --build
+```
+
+After changing live bookmarks through the UI:
+
+- No rebuild is needed
+- The app writes directly to `data/bookmarks.runtime.json`
+
+## Recommendation
+
+For a real VPS deployment, put a reverse proxy in front of this service and expose it through HTTPS.
 
 Recommended options:
 
@@ -139,69 +203,21 @@ start.example.com {
 }
 ```
 
-This gives you:
+## Important Note
 
-```text
-https://start.example.com
-```
+This project now supports cross-device sync through shared server storage, but it still does not include user accounts or write authentication.
 
-## Bookmarks Data
+If you expose it on the public internet, protect it with one of these:
 
-Default bookmarks live in:
-
-`public/data/bookmarks.json`
-
-Important behavior:
-
-- The JSON file is the default source
-- On first load, bookmarks are initialized in the browser
-- After a user edits bookmarks, that browser uses its own local state
-- To reload the default JSON, use the in-page reset action
-
-Example structure:
-
-```json
-{
-  "groups": [
-    {
-      "title": "Daily",
-      "items": [
-        {
-          "name": "Google",
-          "url": "https://www.google.com"
-        }
-      ]
-    }
-  ]
-}
-```
-
-## Updating
-
-After changing code:
-
-```bash
-docker compose up -d --build
-```
-
-After changing only the default bookmarks file:
-
-```bash
-docker compose restart
-```
-
-## Notes
-
-- `docker-compose.yml` uses `restart: unless-stopped`
-- `bookmarks.json` is mounted read-only into the container
-- User-edited bookmarks are stored in browser `localStorage`
-- This is currently a single-user browser-local persistence model, not multi-device sync
+- VPN
+- Basic auth at the reverse proxy
+- Private network only
 
 ## Next Steps
 
-If you want to evolve this into a more complete self-hosted homepage, the most useful next steps are:
+If you want to harden it further, the most useful next steps are:
 
-1. Add server-side persistence
-2. Add authentication
-3. Add a production reverse proxy config
+1. Add write authentication for the API
+2. Add server-side version history or backups
+3. Add multi-user support
 4. Add CI/CD or auto-deploy
