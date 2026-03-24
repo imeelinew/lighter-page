@@ -1,32 +1,9 @@
-const SEARCH_URL = "https://www.google.com/search?q=";
 const BOOKMARKS_API_URL = "./api/bookmarks";
 const BOOKMARKS_RESET_URL = "./api/bookmarks/reset";
 const SETTINGS_KEY = "lighter-page-settings";
 const FAVICON_CACHE_KEY = "lighter-page-favicon-cache";
 const EXPORT_FILE_NAME = "lighter-page-bookmarks.json";
 const GOOGLE_FAVICON_URL = "https://www.google.com/s2/favicons?sz=64&domain_url=";
-const GREETINGS = [
-  "Good morning, begin gently and go far.",
-  "Let the day unfold in quiet grace.",
-  "A little light is enough to begin.",
-  "Soft hours, clear thoughts, steady work.",
-  "The morning opens like a page of silk.",
-  "Begin where the light touches first.",
-  "Let calm be the rhythm of the day.",
-  "A quiet start can hold a bright world.",
-  "Some mornings arrive like music.",
-  "May this hour feel tender and clear.",
-  "The day waits softly at your hands.",
-  "Step lightly, think deeply, move well.",
-  "The gentlest beginnings endure the longest.",
-  "Light gathers in the smallest moments.",
-  "Start slow enough to notice what matters.",
-  "There is grace in an unhurried opening.",
-  "Let the morning keep its golden hush.",
-  "A small beginning can still be beautiful.",
-  "Open the day like a window to warmth.",
-  "Even a quiet dawn can carry wonder."
-];
 
 const SVG_ICONS = {
   add: {
@@ -177,25 +154,6 @@ function scheduleDeferredWork(callback) {
   callback();
 }
 
-function initializeGreeting() {
-  const title = document.getElementById("page-title");
-
-  if (!title) {
-    return;
-  }
-
-  title.textContent = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-
-  if (!shouldAnimate()) {
-    return;
-  }
-
-  title.classList.add("is-smooth-enter");
-  requestAnimationFrame(() => {
-    title.classList.add("is-visible");
-  });
-}
-
 function initializeMotion() {
   document.body.classList.remove("motion-enabled", "motion-active");
 
@@ -206,49 +164,6 @@ function initializeMotion() {
   document.body.classList.add("motion-enabled");
   requestAnimationFrame(() => {
     document.body.classList.add("motion-active");
-  });
-}
-
-function initializeSearch() {
-  const form = document.getElementById("search-form");
-  const input = document.getElementById("search-input");
-
-  if (!form || !input) {
-    return;
-  }
-
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const query = input.value.trim();
-
-    if (!query) {
-      input.focus();
-      return;
-    }
-
-    window.location.href = `${SEARCH_URL}${encodeURIComponent(query)}`;
-  });
-
-  document.addEventListener("keydown", (event) => {
-    const activeElement = document.activeElement;
-    const isTypingTarget =
-      activeElement instanceof HTMLInputElement ||
-      activeElement instanceof HTMLTextAreaElement ||
-      activeElement instanceof HTMLSelectElement ||
-      activeElement?.getAttribute("contenteditable") === "true";
-
-    if (isModalOpen()) {
-      return;
-    }
-
-    if (event.key === "/" && !isTypingTarget && activeElement !== input) {
-      event.preventDefault();
-      input.focus();
-    }
-
-    if (event.key === "Escape" && document.activeElement === input) {
-      input.value = "";
-    }
   });
 }
 
@@ -1564,9 +1479,7 @@ async function loadBookmarks() {
 }
 
 applySettingsToPage();
-initializeGreeting();
 initializeMotion();
-initializeSearch();
 initializeFilter();
 initializeToolbar();
 initializeEditor();
